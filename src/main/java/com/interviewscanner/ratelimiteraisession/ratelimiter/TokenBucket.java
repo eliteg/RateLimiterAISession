@@ -1,13 +1,11 @@
 package com.interviewscanner.ratelimiteraisession.ratelimiter;
 
-public class    TokenBucket {
 
+class TokenBucket implements Limiter {
     private final long capacity;
     private final double refillRatePerSecond;
     private double tokens;
     private long lastRefillMs;
-
-
 
     public TokenBucket(long capacity, double refillRatePerSecond) {
         this.capacity = capacity;
@@ -16,14 +14,13 @@ public class    TokenBucket {
         this.lastRefillMs = System.currentTimeMillis();
     }
 
+    @Override
     public synchronized RateLimitResult tryAcquire(long nowMs) {
         refill(nowMs);
-
         if (tokens >= 1) {
             tokens -= 1;
             return new RateLimitResult(true, (long) tokens, 0L);
         }
-
         long retryAfterMs = (long) Math.ceil((1 - tokens) / refillRatePerSecond * 1000);
         return new RateLimitResult(false, 0L, retryAfterMs);
     }
@@ -34,4 +31,5 @@ public class    TokenBucket {
         tokens = Math.min(capacity, tokens + refilled);
         lastRefillMs = nowMs;
     }
+
 }

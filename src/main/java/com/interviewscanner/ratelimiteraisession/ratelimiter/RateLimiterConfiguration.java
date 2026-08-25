@@ -13,7 +13,7 @@ public class RateLimiterConfiguration {
 
     @Bean
     public RateLimiterService rateLimiterService() {
-        Map<String, TokenBucketConfig> configs = new ConfigLoader().loadFromClasspath(CONFIG_RESOURCE);
+        Map<String, AlgoConfig> configs = new ConfigLoader().loadFromClasspath(CONFIG_RESOURCE);
         return new RateLimiterService(configs, DEFAULT_CONFIG);
     }
 }

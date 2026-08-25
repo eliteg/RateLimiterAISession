@@ -1,4 +1,6 @@
 [
   { "endpoint": "/search", "algorithm": "TokenBucket",
-    "algoConfig": { "capacity": 1000, "refillRatePerSecond": 10 } }
+    "algoConfig": { "capacity": 1000, "refillRatePerSecond": 10 } },
+  { "endpoint": "/login", "algorithm": "SlidingWindow",
+    "algoConfig": { "windowMs": 60000, "maxRequests": 5 } }
 ]

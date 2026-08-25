@@ -30,4 +30,16 @@ class RateLimiterConfigurationTest {
 
         assertThat(result.allowed()).isTrue();
     }
+
+    @Test
+    void wiresSlidingWindowConfiguredEndpointFromStartupResource() {
+        for (int i = 0; i < 5; i++) {
+            RateLimitResult result = rateLimiterService.checkLimit("client1", "/login", 0L);
+            assertThat(result.allowed()).isTrue();
+        }
+
+        RateLimitResult overLimit = rateLimiterService.checkLimit("client1", "/login", 0L);
+
+        assertThat(overLimit.allowed()).isFalse();
+    }
 }

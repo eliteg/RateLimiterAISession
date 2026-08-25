@@ -20,10 +20,12 @@ class ConfigLoaderTest {
                 ]
                 """;
 
-        Map<String, TokenBucketConfig> configs = configLoader.parse(json);
+        Map<String, AlgoConfig> configs = configLoader.parse(json);
 
-        assertThat(configs).containsExactly(
-                Map.entry("/search", new TokenBucketConfig(1000, 10)));
+        assertThat(configs).containsOnlyKeys("/search");
+        assertThat(configs.get("/search"))
+                .usingRecursiveComparison()
+                .isEqualTo(new TokenBucketConfig(1000, 10));
     }
 
     @Test
@@ -37,32 +39,55 @@ class ConfigLoaderTest {
                 ]
                 """;
 
-        Map<String, TokenBucketConfig> configs = configLoader.parse(json);
+        Map<String, AlgoConfig> configs = configLoader.parse(json);
 
-        assertThat(configs).containsExactlyInAnyOrderEntriesOf(Map.of(
-                "/search", new TokenBucketConfig(1000, 10),
-                "/checkout", new TokenBucketConfig(50, 5)));
+        assertThat(configs).containsOnlyKeys("/search", "/checkout");
+        assertThat(configs.get("/search"))
+                .usingRecursiveComparison()
+                .isEqualTo(new TokenBucketConfig(1000, 10));
+        assertThat(configs.get("/checkout"))
+                .usingRecursiveComparison()
+                .isEqualTo(new TokenBucketConfig(50, 5));
+    }
+
+    @Test
+    void parsesSlidingWindowConfig() {
+        String json = """
+                [
+                  { "endpoint": "/login", "algorithm": "SlidingWindow",
+                    "algoConfig": { "windowMs": 60000, "maxRequests": 5 } }
+                ]
+                """;
+
+        Map<String, AlgoConfig> configs = configLoader.parse(json);
+
+        assertThat(configs).containsOnlyKeys("/login");
+        assertThat(configs.get("/login"))
+                .usingRecursiveComparison()
+                .isEqualTo(new SlidingWindowConfig(60000, 5));
     }
 
     @Test
     void throwsOnUnsupportedAlgorithm() {
         String json = """
                 [
-                  { "endpoint": "/search", "algorithm": "SlidingWindow",
+                  { "endpoint": "/search", "algorithm": "LeakyBucket",
                     "algoConfig": { "capacity": 1000, "refillRatePerSecond": 10 } }
                 ]
                 """;
 
         assertThatThrownBy(() -> configLoader.parse(json))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("SlidingWindow");
+                .hasMessageContaining("LeakyBucket");
     }
 
     @Test
     void loadsConfigFromClasspathResource() {
-        Map<String, TokenBucketConfig> configs = configLoader.loadFromClasspath("rate-limit-config-test.json");
+        Map<String, AlgoConfig> configs = configLoader.loadFromClasspath("rate-limit-config-test.json");
 
-        assertThat(configs).containsExactly(
-                Map.entry("/search", new TokenBucketConfig(1000, 10)));
+        assertThat(configs).containsOnlyKeys("/search");
+        assertThat(configs.get("/search"))
+                .usingRecursiveComparison()
+                .isEqualTo(new TokenBucketConfig(1000, 10));
     }
 }

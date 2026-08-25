@@ -1,4 +1,6 @@
 package com.interviewscanner.ratelimiteraisession.ratelimiter;
 
-record ConfigEntry(String endpoint, String algorithm, TokenBucketConfig algoConfig) {
+import com.fasterxml.jackson.databind.JsonNode;
+
+record ConfigEntry(String endpoint, String algorithm, JsonNode algoConfig) {
 }

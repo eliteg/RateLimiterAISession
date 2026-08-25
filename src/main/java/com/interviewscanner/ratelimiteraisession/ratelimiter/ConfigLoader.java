@@ -12,21 +12,24 @@ import java.util.Map;
 
 public class ConfigLoader {
 
-    private static final String SUPPORTED_ALGORITHM = "TokenBucket";
+    private static final Map<String, Class<? extends AlgoConfig>> ALGORITHM_TYPES = Map.of(
+            "TokenBucket", TokenBucketConfig.class,
+            "SlidingWindow", SlidingWindowConfig.class);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public Map<String, TokenBucketConfig> parse(String json) {
+    public Map<String, AlgoConfig> parse(String json) {
         try {
             List<ConfigEntry> entries = objectMapper.readValue(json, new TypeReference<List<ConfigEntry>>() {
             });
 
-            Map<String, TokenBucketConfig> configs = new HashMap<>();
+            Map<String, AlgoConfig> configs = new HashMap<>();
             for (ConfigEntry entry : entries) {
-                if (!SUPPORTED_ALGORITHM.equals(entry.algorithm())) {
+                Class<? extends AlgoConfig> algoConfigType = ALGORITHM_TYPES.get(entry.algorithm());
+                if (algoConfigType == null) {
                     throw new IllegalArgumentException("Unsupported algorithm: " + entry.algorithm());
                 }
-                configs.put(entry.endpoint(), entry.algoConfig());
+                configs.put(entry.endpoint(), objectMapper.treeToValue(entry.algoConfig(), algoConfigType));
             }
             return configs;
         } catch (IOException e) {
@@ -34,7 +37,7 @@ public class ConfigLoader {
         }
     }
 
-    public Map<String, TokenBucketConfig> loadFromClasspath(String resourcePath) {
+    public Map<String, AlgoConfig> loadFromClasspath(String resourcePath) {
         try (InputStream in = ConfigLoader.class.getClassLoader().getResourceAsStream(resourcePath)) {
             if (in == null) {
                 throw new IllegalArgumentException("Config resource not found: " + resourcePath);
