@@ -3,6 +3,10 @@ package com.interviewscanner.ratelimiteraisession.ratelimiter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,5 +63,43 @@ class RateLimiterServiceTest {
 
         assertThat(search.allowed()).isTrue();
         assertThat(checkout.allowed()).isTrue();
+    }
+
+    @Test
+    void neverAllowsMoreThanCapacityWhenBucketIsCreatedConcurrently() throws InterruptedException {
+        int capacity = 100;
+        RateLimiterService service = new RateLimiterService(
+                Map.of("/search", new TokenBucketConfig(capacity, 0.0)),
+                DEFAULT_CONFIG);
+        int threadCount = 50;
+        int attemptsPerThread = 10;
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        AtomicInteger allowedCount = new AtomicInteger();
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    for (int j = 0; j < attemptsPerThread; j++) {
+                        if (service.checkLimit("client1", "/search", 0L).allowed()) {
+                            allowedCount.incrementAndGet();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        doneLatch.await();
+        executor.shutdown();
+
+        assertThat(allowedCount.get()).isEqualTo(capacity);
     }
 }

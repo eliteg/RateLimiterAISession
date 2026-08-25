@@ -1,13 +1,13 @@
 package com.interviewscanner.ratelimiteraisession.ratelimiter;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RateLimiterService {
 
     private final Map<String, TokenBucketConfig> configs;
     private final TokenBucketConfig defaultConfig;
-    private final Map<ClientEndpointKey, TokenBucket> limiters = new HashMap<>();
+    private final Map<ClientEndpointKey, TokenBucket> limiters = new ConcurrentHashMap<>();
 
     public RateLimiterService(Map<String, TokenBucketConfig> configs, TokenBucketConfig defaultConfig) {
         this.configs = configs;

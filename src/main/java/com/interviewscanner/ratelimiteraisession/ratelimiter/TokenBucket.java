@@ -7,14 +7,16 @@ public class    TokenBucket {
     private double tokens;
     private long lastRefillMs;
 
+
+
     public TokenBucket(long capacity, double refillRatePerSecond) {
         this.capacity = capacity;
         this.refillRatePerSecond = refillRatePerSecond;
         this.tokens = capacity;
-        this.lastRefillMs = 0L;
+        this.lastRefillMs = System.currentTimeMillis();
     }
 
-    public RateLimitResult tryAcquire(long nowMs) {
+    public synchronized RateLimitResult tryAcquire(long nowMs) {
         refill(nowMs);
 
         if (tokens >= 1) {
