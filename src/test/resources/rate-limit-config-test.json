@@ -1,0 +1,4 @@
+[
+  { "endpoint": "/search", "algorithm": "TokenBucket",
+    "algoConfig": { "capacity": 1000, "refillRatePerSecond": 10 } }
+]
